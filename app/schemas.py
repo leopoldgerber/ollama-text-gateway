@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, StrictStr
 
 
 class GenerateRequest(BaseModel):
@@ -6,7 +6,7 @@ class GenerateRequest(BaseModel):
     Args:
         BaseModel (BaseModel): Pydantic base model."""
 
-    text: str
+    text: StrictStr = Field(min_length=1)
 
 
 class GenerateResponse(BaseModel):
