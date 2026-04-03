@@ -1,15 +1,17 @@
 from fastapi import FastAPI
 import uvicorn
 
+from app.schemas import GenerateRequest
+
 
 app = FastAPI(title='Project 1')
 
 
 @app.post('/generate')
-def create_reply() -> dict[str, str]:
+def create_reply(request_data: GenerateRequest) -> dict[str, str]:
     """Return stub response.
     Args:
-        None: No arguments."""
+        request_data (GenerateRequest): Request body data."""
     return {'status': 'ok'}
 
 
