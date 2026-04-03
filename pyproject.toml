@@ -1,0 +1,21 @@
+[project]
+name = 'project-1'
+version = '0.1.0'
+description = 'Base HTTP server with FastAPI for Project 1'
+readme = 'README.md'
+requires-python = '>=3.11'
+dependencies = [
+    'fastapi>=0.115.0',
+    'uvicorn>=0.30.0',
+]
+
+[tool.ruff]
+line-length = 79
+target-version = 'py311'
+
+[tool.ruff.lint]
+select = ['E', 'F', 'I', 'B', 'UP']
+
+[build-system]
+requires = ['setuptools>=68.0']
+build-backend = 'setuptools.build_meta'
