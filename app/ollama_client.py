@@ -1,13 +1,18 @@
 import os
 from typing import Any
 
+
 import httpx
 from dotenv import load_dotenv
 
+
 from app.exceptions import OllamaConnectionError, OllamaResponseError
+from app.logger_config import get_logger
 
 
 load_dotenv()
+
+logger = get_logger(logger_name='ollama_text_gateway.ollama')
 
 
 def create_client_config(
@@ -56,6 +61,8 @@ def call_ollama(
         payload (dict[str, Any]): Request payload."""
     api_url = f"{client_config['base_url'].rstrip('/')}/api/chat"
 
+    logger.info('Calling Ollama API.')
+
     try:
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
@@ -66,10 +73,13 @@ def call_ollama(
             response.raise_for_status()
             response_data = response.json()
     except httpx.HTTPError as error:
+        logger.error('Ollama connection failed: %s', str(error))
         raise OllamaConnectionError('Failed to connect to Ollama.') from error
     except ValueError as error:
+        logger.error('Ollama returned invalid JSON: %s', str(error))
         raise OllamaResponseError('Ollama returned invalid JSON.') from error
 
+    logger.info('Ollama API returned response.')
     return response_data
 
 
@@ -79,17 +89,20 @@ def fetch_reply(response_data: dict[str, Any]) -> str:
         response_data (dict[str, Any]): Ollama response data."""
     message_data = response_data.get('message')
     if not isinstance(message_data, dict):
+        logger.error('Ollama response does not contain message object.')
         raise OllamaResponseError(
             'Ollama response must contain message object.'
         )
 
     response_text = message_data.get('content')
     if not isinstance(response_text, str):
+        logger.error('Ollama response content is not a string.')
         raise OllamaResponseError(
             'Ollama response must contain string message content.'
         )
 
     if not response_text.strip():
+        logger.error('Ollama response content is empty.')
         raise OllamaResponseError('Ollama response content is empty.')
 
     return response_text
@@ -99,6 +112,8 @@ def generate_text(prompt_text: str) -> str:
     """Generate text with Ollama.
     Args:
         prompt_text (str): Prompt text."""
+    logger.info('Generating text with Ollama.')
+
     client_config = create_client_config()
     payload = build_payload(
         prompt_text=prompt_text,
@@ -109,6 +124,8 @@ def generate_text(prompt_text: str) -> str:
         payload=payload,
     )
     response_text = fetch_reply(response_data=response_data)
+
+    logger.info('Text generation completed.')
     return response_text
 
 

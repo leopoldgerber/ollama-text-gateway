@@ -3,13 +3,16 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 import uvicorn
 
+
 from app.exceptions import OllamaConnectionError, OllamaResponseError
+from app.logger_config import get_logger
 from app.ollama_client import generate_text
 from app.prompt_builder import build_prompt
 from app.schemas import GenerateRequest, GenerateResponse
 
 
 app = FastAPI(title='Ollama Text Gateway')
+logger = get_logger(logger_name='ollama_text_gateway.app')
 
 
 def build_error_item(error_data: dict) -> dict[str, str]:
@@ -47,12 +50,16 @@ def handle_validation_error(
     Args:
         request (Request): FastAPI request.
         error (RequestValidationError): Raised exception."""
-    error_list = build_error_list(error_items=error.errors())
+    logger.error(
+        'Validation error. Path: %s. Errors: %s',
+        request.url.path,
+        error.errors(),
+    )
     response_data = JSONResponse(
         status_code=422,
         content={
             'detail': 'Request validation failed.',
-            'errors': error_list,
+            'errors': build_error_list(error_items=error.errors()),
         },
     )
     return response_data
@@ -67,6 +74,11 @@ def handle_ollama_error(
     Args:
         request (Request): FastAPI request.
         error (OllamaConnectionError): Raised exception."""
+    logger.error(
+        'Ollama connection error. Path: %s. Error: %s',
+        request.url.path,
+        str(error),
+    )
     response_data = JSONResponse(
         status_code=502,
         content={'detail': str(error)},
@@ -83,6 +95,11 @@ def handle_response_error(
     Args:
         request (Request): FastAPI request.
         error (OllamaResponseError): Raised exception."""
+    logger.error(
+        'Ollama response error. Path: %s. Error: %s',
+        request.url.path,
+        str(error),
+    )
     response_data = JSONResponse(
         status_code=502,
         content={'detail': str(error)},
@@ -95,9 +112,13 @@ def create_reply(request_data: GenerateRequest) -> GenerateResponse:
     """Generate model response.
     Args:
         request_data (GenerateRequest): Request body data."""
+    logger.info('Received request on /generate.')
+
     prompt_text = build_prompt(user_text=request_data.text)
     answer_text = generate_text(prompt_text=prompt_text)
     response_data = GenerateResponse(answer=answer_text)
+
+    logger.info('Request on /generate completed successfully.')
     return response_data
 
 
