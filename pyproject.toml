@@ -11,6 +11,16 @@ dependencies = [
     'python-dotenv>=1.0.1',
 ]
 
+[project.optional-dependencies]
+dev = [
+    'pytest>=8.0.0',
+]
+
+[tool.pytest.ini_options]
+markers = [
+    'integration: marks tests that call real Ollama API',
+]
+
 [tool.ruff]
 line-length = 79
 target-version = 'py311'
