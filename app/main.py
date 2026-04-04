@@ -1,21 +1,28 @@
 import time
-from fastapi import FastAPI, Request
+from typing import Any
+
+from fastapi import FastAPI
+from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.responses import Response
 import uvicorn
 
 from app.config import SETTINGS
-from app.exceptions import OllamaConnectionError, OllamaResponseError
+from app.exceptions import OllamaConnectionError
+from app.exceptions import OllamaResponseError
 from app.logger_config import get_logger
-from app.metrics import (
-    get_metrics,
-    increment_errors,
-    increment_requests,
-    save_response_time,
-)
+from app.metrics import get_metrics
+from app.metrics import get_metrics_output
+from app.metrics import get_metrics_type
+from app.metrics import increment_errors
+from app.metrics import increment_requests
+from app.metrics import save_response_time
+from app.metrics import update_health
 from app.ollama_client import generate_text
 from app.prompt_builder import build_prompt
-from app.schemas import GenerateRequest, GenerateResponse
+from app.schemas import GenerateRequest
+from app.schemas import GenerateResponse
 
 
 app = FastAPI(title=SETTINGS['app_title'])
@@ -123,16 +130,31 @@ def check_health() -> dict[str, str]:
     Args:
         None: No arguments."""
     logger.info('Received request on /health.')
+    update_health(status_value=1)
     response_data = {'status': 'ok'}
     return response_data
 
 
 @app.get('/metrics')
-def show_metrics() -> dict[str, int | float]:
-    """Return service metrics.
+def show_metrics() -> Response:
+    """Return Prometheus metrics.
     Args:
         None: No arguments."""
     logger.info('Received request on /metrics.')
+    metrics_output = get_metrics_output()
+    response_data = Response(
+        content=metrics_output,
+        media_type=get_metrics_type(),
+    )
+    return response_data
+
+
+@app.get('/metrics/json')
+def show_json_metrics() -> dict[str, Any]:
+    """Return JSON metrics.
+    Args:
+        None: No arguments."""
+    logger.info('Received request on /metrics/json.')
     metrics_data = get_metrics()
     return metrics_data
 
@@ -146,13 +168,16 @@ def create_reply(request_data: GenerateRequest) -> GenerateResponse:
 
     start_time = time.perf_counter()
 
-    increment_requests()
+    increment_requests(endpoint='/generate')
     prompt_text = build_prompt(user_text=request_data.text)
     answer_text = generate_text(prompt_text=prompt_text)
     response_data = GenerateResponse(answer=answer_text)
 
     response_time = time.perf_counter() - start_time
-    save_response_time(response_time=response_time)
+    save_response_time(
+        endpoint='/generate',
+        response_time=response_time,
+    )
 
     logger.info(
         'Request on /generate completed successfully. '

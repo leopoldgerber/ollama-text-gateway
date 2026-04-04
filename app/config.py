@@ -65,6 +65,18 @@ def build_settings() -> dict[str, str]:
             env_name='LOG_FILE_NAME',
             default_value='app.log',
         ),
+        'metrics_path': get_env_value(
+            env_name='METRICS_PATH',
+            default_value='/metrics',
+        ),
+        'metrics_json_path': get_env_value(
+            env_name='METRICS_JSON_PATH',
+            default_value='/metrics/json',
+        ),
+        'prometheus_multiproc_dir': get_env_value(
+            env_name='PROMETHEUS_MULTIPROC_DIR',
+            default_value='',
+        ),
     }
     return settings_data
 
