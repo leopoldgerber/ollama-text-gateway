@@ -1,12 +1,31 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 import uvicorn
 
+
+from app.exceptions import OllamaConnectionError
 from app.ollama_client import generate_text
 from app.prompt_builder import build_prompt
 from app.schemas import GenerateRequest, GenerateResponse
 
 
 app = FastAPI(title='Project 1')
+
+
+@app.exception_handler(OllamaConnectionError)
+def handle_ollama_error(
+    request: Request,
+    error: OllamaConnectionError,
+) -> JSONResponse:
+    """Handle Ollama connection error.
+    Args:
+        request (Request): FastAPI request.
+        error (OllamaConnectionError): Raised exception."""
+    response_data = JSONResponse(
+        status_code=502,
+        content={'detail': str(error)},
+    )
+    return response_data
 
 
 @app.post('/generate', response_model=GenerateResponse)

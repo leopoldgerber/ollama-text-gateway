@@ -1,7 +1,7 @@
 [project]
-name = 'project-1'
+name = 'ollama-text-gateway'
 version = '0.1.0'
-description = 'Base HTTP server with FastAPI for Project 1'
+description = 'Base HTTP server with FastAPI'
 readme = 'README.md'
 requires-python = '>=3.11'
 dependencies = [

@@ -4,6 +4,8 @@ from typing import Any
 import httpx
 from dotenv import load_dotenv
 
+from app.exceptions import OllamaConnectionError
+
 load_dotenv()
 
 
@@ -53,14 +55,17 @@ def call_ollama(
         payload (dict[str, Any]): Request payload."""
     api_url = f"{client_config['base_url'].rstrip('/')}/api/chat"
 
-    with httpx.Client(timeout=30.0) as client:
-        response = client.post(
-            api_url,
-            headers=client_config['headers'],
-            json=payload,
-        )
-        response.raise_for_status()
-        response_data = response.json()
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                api_url,
+                headers=client_config['headers'],
+                json=payload,
+            )
+            response.raise_for_status()
+            response_data = response.json()
+    except httpx.HTTPError as error:
+        raise OllamaConnectionError('Failed to connect to Ollama.') from error
 
     return response_data
 
@@ -100,4 +105,6 @@ def generate_text(prompt_text: str) -> str:
     return response_text
 
 
-generated_text = generate_text(prompt_text='Say hello.')
+if __name__ == '__main__':
+    result_text = generate_text(prompt_text='Say hello.')
+    print(result_text)
