@@ -3,6 +3,10 @@ from typing import Any
 
 METRICS_DATA: dict[str, Any] = {
     'requests_total': 0,
+    'last_response_time_seconds': 0.0,
+    'response_time_total_seconds': 0.0,
+    'response_time_count': 0,
+    'average_response_time_seconds': 0.0,
 }
 
 
@@ -11,6 +15,23 @@ def increment_requests() -> dict[str, Any]:
     Args:
         None: No arguments."""
     METRICS_DATA['requests_total'] += 1
+    return METRICS_DATA
+
+
+def save_response_time(response_time: float) -> dict[str, Any]:
+    """Save response time metrics.
+    Args:
+        response_time (float): Request processing time."""
+    METRICS_DATA['last_response_time_seconds'] = response_time
+    METRICS_DATA['response_time_total_seconds'] += response_time
+    METRICS_DATA['response_time_count'] += 1
+
+    total_time = METRICS_DATA['response_time_total_seconds']
+    total_count = METRICS_DATA['response_time_count']
+
+    average_time = total_time / total_count
+    METRICS_DATA['average_response_time_seconds'] = average_time
+
     return METRICS_DATA
 
 

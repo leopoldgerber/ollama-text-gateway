@@ -1,3 +1,6 @@
+import time
+
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -6,7 +9,7 @@ import uvicorn
 
 from app.exceptions import OllamaConnectionError, OllamaResponseError
 from app.logger_config import get_logger
-from app.metrics import get_metrics, increment_requests
+from app.metrics import get_metrics, increment_requests, save_response_time
 from app.ollama_client import generate_text
 from app.prompt_builder import build_prompt
 from app.schemas import GenerateRequest, GenerateResponse
@@ -119,7 +122,7 @@ def check_health() -> dict[str, str]:
 
 
 @app.get('/metrics')
-def show_metrics() -> dict[str, int]:
+def show_metrics() -> dict[str, int | float]:
     """Return service metrics.
     Args:
         None: No arguments."""
@@ -134,13 +137,22 @@ def create_reply(request_data: GenerateRequest) -> GenerateResponse:
     Args:
         request_data (GenerateRequest): Request body data."""
     logger.info('Received request on /generate.')
-    increment_requests()
 
+    start_time = time.perf_counter()
+
+    increment_requests()
     prompt_text = build_prompt(user_text=request_data.text)
     answer_text = generate_text(prompt_text=prompt_text)
     response_data = GenerateResponse(answer=answer_text)
 
-    logger.info('Request on /generate completed successfully.')
+    response_time = time.perf_counter() - start_time
+    save_response_time(response_time=response_time)
+
+    logger.info(
+        'Request on /generate completed successfully. '
+        'Response time: %.4f sec.',
+        response_time,
+    )
     return response_data
 
 
