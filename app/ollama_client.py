@@ -4,13 +4,14 @@ from typing import Any
 import httpx
 from dotenv import load_dotenv
 
-from app.exceptions import OllamaConnectionError
+from app.exceptions import OllamaConnectionError, OllamaResponseError
+
 
 load_dotenv()
 
 
 def create_client_config(
-        model_name: str = 'gpt-oss:20b-cloud'
+    model_name: str = 'gpt-oss:20b-cloud',
 ) -> dict[str, Any]:
     """Create Ollama client config.
     Args:
@@ -66,6 +67,8 @@ def call_ollama(
             response_data = response.json()
     except httpx.HTTPError as error:
         raise OllamaConnectionError('Failed to connect to Ollama.') from error
+    except ValueError as error:
+        raise OllamaResponseError('Ollama returned invalid JSON.') from error
 
     return response_data
 
@@ -76,14 +79,18 @@ def fetch_reply(response_data: dict[str, Any]) -> str:
         response_data (dict[str, Any]): Ollama response data."""
     message_data = response_data.get('message')
     if not isinstance(message_data, dict):
-        raise TypeError('Ollama response must contain message object.')
+        raise OllamaResponseError(
+            'Ollama response must contain message object.'
+        )
 
     response_text = message_data.get('content')
     if not isinstance(response_text, str):
-        raise TypeError('Ollama response must contain string message content.')
+        raise OllamaResponseError(
+            'Ollama response must contain string message content.'
+        )
 
     if not response_text.strip():
-        raise ValueError('Ollama response content is empty.')
+        raise OllamaResponseError('Ollama response content is empty.')
 
     return response_text
 
