@@ -6,6 +6,7 @@ import uvicorn
 
 from app.exceptions import OllamaConnectionError, OllamaResponseError
 from app.logger_config import get_logger
+from app.metrics import get_metrics, increment_requests
 from app.ollama_client import generate_text
 from app.prompt_builder import build_prompt
 from app.schemas import GenerateRequest, GenerateResponse
@@ -107,12 +108,33 @@ def handle_response_error(
     return response_data
 
 
+@app.get('/health')
+def check_health() -> dict[str, str]:
+    """Return service health status.
+    Args:
+        None: No arguments."""
+    logger.info('Received request on /health.')
+    response_data = {'status': 'ok'}
+    return response_data
+
+
+@app.get('/metrics')
+def show_metrics() -> dict[str, int]:
+    """Return service metrics.
+    Args:
+        None: No arguments."""
+    logger.info('Received request on /metrics.')
+    metrics_data = get_metrics()
+    return metrics_data
+
+
 @app.post('/generate', response_model=GenerateResponse)
 def create_reply(request_data: GenerateRequest) -> GenerateResponse:
     """Generate model response.
     Args:
         request_data (GenerateRequest): Request body data."""
     logger.info('Received request on /generate.')
+    increment_requests()
 
     prompt_text = build_prompt(user_text=request_data.text)
     answer_text = generate_text(prompt_text=prompt_text)
