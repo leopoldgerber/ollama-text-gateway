@@ -3,6 +3,10 @@ from typing import Any
 
 METRICS_DATA: dict[str, Any] = {
     'requests_total': 0,
+    'errors_total': 0,
+    'validation_errors_total': 0,
+    'ollama_connection_errors_total': 0,
+    'ollama_response_errors_total': 0,
     'last_response_time_seconds': 0.0,
     'response_time_total_seconds': 0.0,
     'response_time_count': 0,
@@ -15,6 +19,18 @@ def increment_requests() -> dict[str, Any]:
     Args:
         None: No arguments."""
     METRICS_DATA['requests_total'] += 1
+    return METRICS_DATA
+
+
+def increment_errors(error_type: str) -> dict[str, Any]:
+    """Increment error counters.
+    Args:
+        error_type (str): Error metric field name."""
+    METRICS_DATA['errors_total'] += 1
+
+    if error_type in METRICS_DATA:
+        METRICS_DATA[error_type] += 1
+
     return METRICS_DATA
 
 

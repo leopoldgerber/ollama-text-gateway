@@ -1,16 +1,10 @@
-import os
 from typing import Any
-
-
 import httpx
-from dotenv import load_dotenv
 
-
+from app.config import SETTINGS
 from app.exceptions import OllamaConnectionError, OllamaResponseError
 from app.logger_config import get_logger
 
-
-load_dotenv()
 
 logger = get_logger(logger_name='ollama_text_gateway.ollama')
 
@@ -21,17 +15,11 @@ def create_client_config(
     """Create Ollama client config.
     Args:
         model_name (str): Ollama model name."""
-    api_key = os.getenv('OLLAMA_API_KEY')
-    if not api_key:
-        raise ValueError('OLLAMA_API_KEY is missing')
-
-    base_url = os.getenv('OLLAMA_BASE_URL', 'https://ollama.com')
-
     client_config: dict[str, Any] = {
         'model_name': model_name,
-        'base_url': base_url,
+        'base_url': SETTINGS['ollama_base_url'],
         'headers': {
-            'Authorization': f'Bearer {api_key}',
+            'Authorization': f"Bearer {SETTINGS['ollama_api_key']}",
             'Content-Type': 'application/json',
         },
     }
@@ -114,7 +102,9 @@ def generate_text(prompt_text: str) -> str:
         prompt_text (str): Prompt text."""
     logger.info('Generating text with Ollama.')
 
-    client_config = create_client_config()
+    client_config = create_client_config(
+        model_name=SETTINGS['ollama_model_name']
+    )
     payload = build_payload(
         prompt_text=prompt_text,
         model_name=client_config['model_name'],

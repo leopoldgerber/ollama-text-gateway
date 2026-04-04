@@ -1,21 +1,24 @@
 import time
-
-
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 import uvicorn
 
-
+from app.config import SETTINGS
 from app.exceptions import OllamaConnectionError, OllamaResponseError
 from app.logger_config import get_logger
-from app.metrics import get_metrics, increment_requests, save_response_time
+from app.metrics import (
+    get_metrics,
+    increment_errors,
+    increment_requests,
+    save_response_time,
+)
 from app.ollama_client import generate_text
 from app.prompt_builder import build_prompt
 from app.schemas import GenerateRequest, GenerateResponse
 
 
-app = FastAPI(title='Ollama Text Gateway')
+app = FastAPI(title=SETTINGS['app_title'])
 logger = get_logger(logger_name='ollama_text_gateway.app')
 
 
@@ -54,6 +57,7 @@ def handle_validation_error(
     Args:
         request (Request): FastAPI request.
         error (RequestValidationError): Raised exception."""
+    increment_errors(error_type='validation_errors_total')
     logger.error(
         'Validation error. Path: %s. Errors: %s',
         request.url.path,
@@ -78,6 +82,7 @@ def handle_ollama_error(
     Args:
         request (Request): FastAPI request.
         error (OllamaConnectionError): Raised exception."""
+    increment_errors(error_type='ollama_connection_errors_total')
     logger.error(
         'Ollama connection error. Path: %s. Error: %s',
         request.url.path,
@@ -99,6 +104,7 @@ def handle_response_error(
     Args:
         request (Request): FastAPI request.
         error (OllamaResponseError): Raised exception."""
+    increment_errors(error_type='ollama_response_errors_total')
     logger.error(
         'Ollama response error. Path: %s. Error: %s',
         request.url.path,
@@ -160,7 +166,12 @@ def run_server() -> None:
     """Run HTTP server.
     Args:
         None: No arguments."""
-    uvicorn.run('app.main:app', host='0.0.0.0', port=8000, reload=True)
+    uvicorn.run(
+        'app.main:app',
+        host=SETTINGS['app_host'],
+        port=int(SETTINGS['app_port']),
+        reload=SETTINGS['app_reload'].lower() == 'true',
+    )
 
 
 if __name__ == '__main__':

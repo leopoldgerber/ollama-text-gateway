@@ -2,18 +2,16 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from dotenv import load_dotenv
 
-
-load_dotenv()
+from app.config import SETTINGS
 
 
 def build_log_path() -> str:
     """Build log file path.
     Args:
         None: No arguments."""
-    log_dir = os.getenv('LOG_DIR', 'logs')
-    log_file_name = os.getenv('LOG_FILE_NAME', 'app.log')
+    log_dir = SETTINGS['log_dir']
+    log_file_name = SETTINGS['log_file_name']
 
     os.makedirs(log_dir, exist_ok=True)
 
@@ -25,7 +23,7 @@ def get_log_level() -> int:
     """Get logger level.
     Args:
         None: No arguments."""
-    log_level_name = os.getenv('LOG_LEVEL', 'INFO').upper()
+    log_level_name = SETTINGS['log_level'].upper()
     log_level = getattr(logging, log_level_name, logging.INFO)
     return log_level
 
