@@ -1,0 +1,12 @@
+stages:
+  - lint
+  - test
+  - build
+  - infra
+  - deploy
+
+include:
+  - local: '.gitlab/ci/app.yml'
+  - local: '.gitlab/ci/ollama.yml'
+  - local: '.gitlab/ci/postgres.yml'
+  - local: '.gitlab/ci/alembic.yml'

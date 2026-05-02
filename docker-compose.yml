@@ -1,0 +1,24 @@
+services:
+  app:
+    image: registry.gitlab.com/leogerber/ollama-text-gateway:latest
+    container_name: ollama-text-gateway
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=gemma3:270m
+      - DATABASE_URL=${DATABASE_URL}
+      - ALEMBIC_DATABASE_URL=${ALEMBIC_DATABASE_URL}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ai-backend
+
+networks:
+  ai-backend:
+    external: true
